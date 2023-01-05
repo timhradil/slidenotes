@@ -8,7 +8,7 @@ function NotesPage(props) {
         <Typography noWrap variant='h5'>
           {props.title}
         </Typography>
-        <Box sx={{ pt: 1, overflow: 'auto', height: 'calc(100vh-150px)', bgcolor: 'background.default'}}>
+        <Box sx={{ pt: 1, overflowY: 'scroll', height: {xs: 'calc(100vh - 265px)', sm: 'calc(100vh - 205px)'}, bgcolor: 'background.default'}}>
           <Typography sx={{ whiteSpace: 'pre-wrap'}}>
             {props.notes}
           </Typography>
