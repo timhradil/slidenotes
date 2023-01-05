@@ -1,0 +1,22 @@
+# dependencies
+slidenotes-frontend/node_modules
+slidenotes-frontend/.pnp
+slidenotes-frontend/.pnp.js
+
+# testing
+slidenotes-frontend/coverage
+
+# production
+slidenotes-frontend/build
+
+# misc
+slidenotes-frontend/.DS_Store
+slidenotes-frontend/.env.local
+slidenotes-frontend/.env.development.local
+slidenotes-frontend/.env.test.local
+slidenotes-frontend/.env.production.local
+slidenotes-frontend/.env
+
+slidenotes-frontend/npm-debug.log*
+slidenotes-frontend/yarn-debug.log*
+slidenotes-frontend/yarn-error.log*
