@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  slidenotes-backend
+
+  Sample SAM Template for slidenotes-backend
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 180
+    MemorySize: 128
+    Tracing: Active
+  Api:
+    TracingEnabled: true
+
+Resources:
+  submitRequestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: submitRequest/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          SQS_QUEUE: !Ref pptxToTextQueue
+          DYNAMODB_TABLE: !Ref slidenotesDynamoDB
+      Events:
+        submitRequest:
+          Type: Api 
+          Properties:
+            Path: /submitRequest
+            Method: POST
+            RestApiId:
+              Ref: slidenotesApi 
+      Policies:
+        - AmazonSQSFullAccess
+        - AmazonDynamoDBFullAccess
+       
+
+  checkRequestStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: checkRequestStatus/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref slidenotesDynamoDB
+      Events:
+        checkRequestStatus:
+          Type: Api 
+          Properties:
+            Path: /checkRequestStatus
+            Method: POST
+            RestApiId:
+              Ref: slidenotesApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+  convertPPTXToTextFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 300
+      MemorySize: 1024
+      CodeUri: convertPPTXToText/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          S3_BUCKET: !Ref pptxBucket
+          DYNAMODB_TABLE: !Ref slidenotesDynamoDB
+          SQS_QUEUE: !Ref summarizeTextQueue 
+      Events:
+        convertPPTXToTextQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt pptxToTextQueue.Arn
+            BatchSize: 1
+      Policies:
+        - AmazonS3FullAccess
+        - AmazonDynamoDBFullAccess
+        - AmazonSQSFullAccess
+
+
+  summarizeTextFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 300
+      CodeUri: summarizeText/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref slidenotesDynamoDB
+      Events:
+        summarizeTextQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt summarizeTextQueue.Arn
+            BatchSize: 1
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+  slidenotesApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+
+  pptxBucket:
+    Type: AWS::S3::Bucket
+
+  pptxToTextQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 300
+
+  summarizeTextQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 300
+
+  slidenotesDynamoDB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions: 
+        - AttributeName: id
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Join:
+        - ''
+        - - ApplicationInsights-SAM-
+          - Ref: AWS::StackName
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Fn::Join:
+        - ''
+        - - ApplicationInsights-SAM-
+          - Ref: AWS::StackName
+      AutoConfigurationEnabled: 'true'
+    DependsOn: ApplicationResourceGroup
+
+Outputs:
+  slidenotesApi:
+    Description: API Gateway endpoint URL
+    Value:
+      Fn::Sub: https://${slidenotesApi}.execute-api.${AWS::Region}.amazonaws.com/Stage/
