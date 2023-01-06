@@ -4,8 +4,23 @@ import boto3
 import openai
 from threading import Thread
 
+def getOpenAPIKey():
+    secret_name = "OpenAIKey"
+    region_name = "us-west-2"
+    session = boto3.session.Session()
+    client = session.client(
+      service_name='secretsmanager',
+      region_name=region_name
+    )
+
+    get_secret_value_response = client.get_secret_value(
+      SecretId=secret_name
+    )
+
+    return json.loads(get_secret_value_response['SecretString'])['Secret Key']
+
 def makeOpenAiCall(prompt, split_notes_text, index):
-    openai.api_key = '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'
+    openai.api_key = getOpenAPIKey()
     response = openai.Completion.create(
       model='text-davinci-003',
       prompt=prompt, max_tokens=500)

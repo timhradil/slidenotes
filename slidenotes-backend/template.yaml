@@ -109,6 +109,8 @@ Resources:
             BatchSize: 1
       Policies:
         - AmazonDynamoDBFullAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: "arn:aws:secretsmanager:us-west-2:586103959850:secret:OpenAIKey-sXAkvm"
 
   slidenotesApi:
     Type: AWS::Serverless::Api
