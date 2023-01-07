@@ -3,6 +3,7 @@ import json
 import boto3
 import openai
 from threading import Thread
+from boto3.dynamodb.conditions import Key
 
 def getOpenAPIKey():
     secret_name = "OpenAIKey"
@@ -42,29 +43,50 @@ def lambda_handler(event, context):
       TableName=DYNAMODB_TABLE,
       Key={
         'id':{'S': id}
-      }
+      },
+      AttributesToGet=[
+        'raw_text'
+      ]
     )
 
     raw_text = response['Item']['raw_text']['S']
     
-    # Prep Text
-    prompt_start = 'Write bulleted notes for this text: \"'
-    prompt_end= '\" in this form: \"- text\n\t- text\"'
-    split_size = 2500
-    split_raw_text = [raw_text[i:i+split_size] for i in range(0, len(raw_text), split_size)]
+    # Check for cached raw_text
+    notes_text = ''
+  
+    response = db_client.query(
+      TableName=DYNAMODB_TABLE,
+      IndexName='raw_text_cache',
+      KeyConditionExpression='raw_text = :raw_text',
+      ExpressionAttributeValues={
+        ':raw_text': { 'S': raw_text }
+      },
+      Limit=2,
+    )
+    items = response['Items']
+    if len(items) > 1:
+      for item in items:
+        if len(item['notes_text']['S']) > 1:
+          notes_text = item['notes_text']['S']
+    else: 
+      # Prep Text
+      prompt_start = 'Write bulleted notes for this text: \"'
+      prompt_end= '\" in this form: \"- text\n\t- text\"'
+      split_size = 2500
+      split_raw_text = [raw_text[i:i+split_size] for i in range(0, len(raw_text), split_size)]
 
-    threads = [None] * len(split_raw_text)
-    split_notes_text = [None] * len(split_raw_text)
+      threads = [None] * len(split_raw_text)
+      split_notes_text = [None] * len(split_raw_text)
 
-    for i in range(len(split_raw_text)):
-      prompt = prompt_start + split_raw_text[i] + prompt_end
-      threads[i] = Thread(target=makeOpenAiCall, args=(prompt, split_notes_text, i))
-      threads[i].start()
+      for i in range(len(split_raw_text)):
+        prompt = prompt_start + split_raw_text[i] + prompt_end
+        threads[i] = Thread(target=makeOpenAiCall, args=(prompt, split_notes_text, i))
+        threads[i].start()
     
-    for i in range(len(split_raw_text)):
-      threads[i].join()
+      for i in range(len(split_raw_text)):
+        threads[i].join()
     
-    notes_text = ''.join(split_notes_text)
+      notes_text = ''.join(split_notes_text)
 
     # Update DynamoDB Entry
     response = db_client.update_item(

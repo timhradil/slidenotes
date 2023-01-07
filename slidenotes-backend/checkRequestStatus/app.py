@@ -25,7 +25,7 @@ def lambda_handler(event, context):
     raw_text = response['Item']['raw_text']['S']
     notes_text = response['Item']['notes_text']['S']
  
-    if len(raw_text) == 0:
+    if len(raw_text) == 1:
       return {
         'statusCode': 202,
         'headers': {
@@ -33,10 +33,10 @@ def lambda_handler(event, context):
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
         },
-        'body': json.dumps({"status": "Extracting text", "notes_text": "", "progress": 50})
+        'body': json.dumps({"status": "Extracting Text", "notes_text": "", "progress": 50})
       }
 
-    if len(notes_text) == 0:
+    if len(notes_text) == 1:
       return {
         'statusCode': 202,
         'headers': {
@@ -44,7 +44,7 @@ def lambda_handler(event, context):
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
         },
-        'body': json.dumps({"status": "Creating notes", "notes_text": "", "progress": 75})
+        'body': json.dumps({"status": "Creating Notes", "notes_text": "", "progress": 75})
       }
 
     return {

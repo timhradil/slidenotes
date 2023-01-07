@@ -5,6 +5,8 @@ import boto3
 import collections
 import collections.abc
 from pptx import Presentation
+import nltk
+from nltk.corpus import stopwords
 
 # convertPPTXToText 
 def lambda_handler(event, context):
@@ -51,7 +53,12 @@ def lambda_handler(event, context):
                   text_runs.append(run.text)
 
     raw_text = ' '.join(text_runs)
-    print(raw_text)
+    
+    # Remove stop words
+    nltk.data.path.append("/tmp/nltk_data")
+    nltk.download('stopwords', download_dir="/tmp/nltk_data")
+    stopWords = stopwords.words('english')
+    raw_text = ' '.join([word for word in raw_text.split() if word not in stopWords])
 
     # Update DynamoDB Entry
     response = db_client.update_item(

@@ -93,6 +93,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 300
+      MemorySize: 1024
       CodeUri: summarizeText/
       Handler: app.lambda_handler
       Runtime: python3.8
@@ -140,9 +141,25 @@ Resources:
       AttributeDefinitions: 
         - AttributeName: id
           AttributeType: S
+        - AttributeName: raw_text
+          AttributeType: S
       KeySchema: 
         - AttributeName: id
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: raw_text_cache
+          KeySchema:
+          - AttributeName: raw_text
+            KeyType: HASH
+          Projection:
+            NonKeyAttributes:
+            - id
+            - notes_text
+            - s3key
+            ProjectionType: INCLUDE
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
       ProvisionedThroughput: 
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
