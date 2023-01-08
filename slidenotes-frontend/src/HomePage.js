@@ -1,13 +1,16 @@
 import React from 'react';
-import {Typography, Box, Button} from '@mui/material';
-import demo from './demo.png'
+import {Typography, Box, Grid, Button} from '@mui/material';
+import fast from './fast.png'
+import comprehensive from './comprehensive.png'
+import easy from './easy.png'
 
 function HomePage(props) {
   
   const fileInput = React.useRef();
   
   return(
-    <Box sx={{ px: 5, flexGrow: 1, display: 'flex', justifyContent: 'center', flexDirection: 'column', alignContent: 'center', alignItems: 'flex-start', width: {xs: '90vw', sm: '40vw'} }}>
+    <Grid container spacing={2} columns={{xs:12, sm: 12, md: 14}} sx={{ flexGrow: 1, alignContent: 'center', alignItems: 'center', justifyContent: 'center', p: 3 }}>
+      <Grid item xs={12} md={5}>
         <Typography variant='h4'> 
           Transform presentations into readable notes with ease!
         </Typography>
@@ -18,7 +21,23 @@ function HomePage(props) {
           Get Started
         </Button>
         <input ref={fileInput} hidden accept="application/vnd.openxmlformats-officedocument.presentationml.presentation" type="file" onChange={props.handleUpload} />
-    </Box>
+      </Grid>
+      <Grid item xs={12} sm={4} md={3}>
+        <Box sx={{ width: {xs: "100%", sm: "80%", md: "100%"} }}>
+          <img width="100%" src={fast} alt="Slidenotes is fast"/>
+        </Box>
+      </Grid>
+      <Grid item xs={12} sm={4} md={3}>
+        <Box sx={{ width: {xs: "100%", sm: "80%", md: "100%"} }}>
+          <img width="100%" src={comprehensive} alt="Slidenotes is comprehensive"/>
+        </Box>
+      </Grid>
+      <Grid item xs={12} sm={4} md={3}>
+        <Box sx={{ width: {xs: "100%", sm: "80%", md: "100%"} }}>
+          <img width="100%" src={easy} alt="Slidenotes is easy"/>
+        </Box>
+      </Grid>
+    </Grid>
   );
 }
 
