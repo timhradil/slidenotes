@@ -141,18 +141,19 @@ Resources:
       AttributeDefinitions: 
         - AttributeName: id
           AttributeType: S
-        - AttributeName: raw_text
+        - AttributeName: raw_text_hash
           AttributeType: S
       KeySchema: 
         - AttributeName: id
           KeyType: HASH
       GlobalSecondaryIndexes:
-        - IndexName: raw_text_cache
+        - IndexName: raw_text_cache_hash
           KeySchema:
-          - AttributeName: raw_text
+          - AttributeName: raw_text_hash
             KeyType: HASH
           Projection:
             NonKeyAttributes:
+            - raw_text
             - id
             - notes_text
             - s3key

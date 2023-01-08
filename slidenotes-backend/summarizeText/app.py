@@ -45,21 +45,23 @@ def lambda_handler(event, context):
         'id':{'S': id}
       },
       AttributesToGet=[
-        'raw_text'
+        'raw_text',
+        'raw_text_hash'
       ]
     )
 
     raw_text = response['Item']['raw_text']['S']
+    raw_text_hash = response['Item']['raw_text_hash']['S']
     
     # Check for cached raw_text
     notes_text = ''
   
     response = db_client.query(
       TableName=DYNAMODB_TABLE,
-      IndexName='raw_text_cache',
-      KeyConditionExpression='raw_text = :raw_text',
+      IndexName='raw_text_cache_hash',
+      KeyConditionExpression='raw_text_hash = :raw_text_hash',
       ExpressionAttributeValues={
-        ':raw_text': { 'S': raw_text }
+        ':raw_text_hash': { 'S': raw_text_hash }
       },
       Limit=2,
     )
@@ -74,10 +76,10 @@ def lambda_handler(event, context):
       prompt_end= '\" in this form: \"- text\n\t- text\"'
       split_size = 2500
       split_raw_text = [raw_text[i:i+split_size] for i in range(0, len(raw_text), split_size)]
-
       threads = [None] * len(split_raw_text)
       split_notes_text = [None] * len(split_raw_text)
 
+      # Create new notes
       for i in range(len(split_raw_text)):
         prompt = prompt_start + split_raw_text[i] + prompt_end
         threads[i] = Thread(target=makeOpenAiCall, args=(prompt, split_notes_text, i))

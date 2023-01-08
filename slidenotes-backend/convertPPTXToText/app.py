@@ -7,6 +7,7 @@ import collections.abc
 from pptx import Presentation
 import nltk
 from nltk.corpus import stopwords
+import hashlib
 
 # convertPPTXToText 
 def lambda_handler(event, context):
@@ -30,7 +31,10 @@ def lambda_handler(event, context):
       TableName=DYNAMODB_TABLE,
       Key={
         'id':{'S': id}
-      }
+      },
+      AttributesToGet=[
+        's3key',
+      ]
     )
 
     s3key = response['Item']['s3key']['S']
@@ -39,9 +43,7 @@ def lambda_handler(event, context):
     response = s3_client.get_object(Bucket=S3_BUCKET, Key=s3key)
     prs_bytes = response['Body'].read()
     prs_file = io.BytesIO(prs_bytes)
-
     prs = Presentation(prs_file)
-
     text_runs = []
 
     for slide in prs.slides:
@@ -59,6 +61,9 @@ def lambda_handler(event, context):
     nltk.download('stopwords', download_dir="/tmp/nltk_data")
     stopWords = stopwords.words('english')
     raw_text = ' '.join([word for word in raw_text.split() if word not in stopWords])
+    
+    # Hash raw text for cacheing
+    raw_text_hash = hashlib.sha256(raw_text.encode('UTF-8')).hexdigest()
 
     # Update DynamoDB Entry
     response = db_client.update_item(
@@ -66,8 +71,8 @@ def lambda_handler(event, context):
       Key={
         'id':{'S': id}
       },
-      UpdateExpression='SET raw_text = :raw_text',
-      ExpressionAttributeValues={':raw_text': {'S': raw_text}}
+      UpdateExpression='SET raw_text = :raw_text, raw_text_hash = :raw_text_hash',
+      ExpressionAttributeValues={':raw_text': {'S': raw_text}, ':raw_text_hash': {'S': raw_text_hash}}
     )
     
     # Create SQS Message

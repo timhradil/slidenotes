@@ -28,6 +28,7 @@ def lambda_handler(event, context):
         'id':{'S': id},
         's3key':{'S': s3key},
         'raw_text':{'S': '_'},
+        'raw_text_hash':{'S': '_'},
         'notes_text':{'S': '_'},
       },
     )

@@ -19,13 +19,17 @@ def lambda_handler(event, context):
       TableName=DYNAMODB_TABLE,
       Key={
         'id': {'S': id}
-      }
+      },
+      AttributesToGet=[
+        'raw_text_hash',
+        'notes_text',
+      ]
     )
 
-    raw_text = response['Item']['raw_text']['S']
+    raw_text_hash = response['Item']['raw_text_hash']['S']
     notes_text = response['Item']['notes_text']['S']
  
-    if len(raw_text) == 1:
+    if len(raw_text_hash) <= 1:
       return {
         'statusCode': 202,
         'headers': {
@@ -36,7 +40,7 @@ def lambda_handler(event, context):
         'body': json.dumps({"status": "Extracting Text", "notes_text": "", "progress": 50})
       }
 
-    if len(notes_text) == 1:
+    if len(notes_text) <= 1:
       return {
         'statusCode': 202,
         'headers': {
