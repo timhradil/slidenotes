@@ -22,14 +22,16 @@ function App() {
   const [status, setStatus] = React.useState("")
   const [notes, setNotes] = React.useState("")
   const [path, setPath] = React.useState(window.location.pathname)
+  const [id, setId] = React.useState("")
   
   React.useEffect(() => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-    const id = path.slice(1)
-    if (id.match(uuidRegex)) {
+    const possibleId = path.slice(1)
+    if (possibleId.match(uuidRegex)) {
       setStatus("Sending Request")
       setProgress(25)
-      checkRequestStatus(id)
+      setId(possibleId)
+      checkRequestStatus(possibleId)
     }
   }, [path])
 
@@ -90,6 +92,19 @@ function App() {
       })
     }, 1000)
   }
+  
+  function downloadNotes(){
+    const url = "https://jego7yc194.execute-api.us-west-2.amazonaws.com/Stage/downloadNotes"
+    const requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+    }
+    fetch(url, requestOptions)
+    .catch((err) => {
+      console.log(err.message)
+    })
+  }
 
   return (
     <Protect sha512={process.env.REACT_APP_SHA512_PASSWORD_HASH}>
@@ -100,7 +115,7 @@ function App() {
         {status.length > 0 && notes.length === 0 &&
           <ProgressPage status={status} progress={progress} />}
         {notes.length > 0 &&
-          <NotesPage title={title} notes={notes} />}
+          <NotesPage title={title} notes={notes} download={downloadNotes} />}
       </Box>
     </Protect>
   );

@@ -1,0 +1,4 @@
+requests
+boto3
+fpdf2
+Unidecode

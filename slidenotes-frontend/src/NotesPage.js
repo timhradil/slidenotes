@@ -29,7 +29,7 @@ function NotesPage(props) {
             Share 
           </Button>
         </RWebShare>
-        <Button variant="outlined" color="secondary" sx={{mt: {xs: 0, sm: 1}, width: {xs: '49%', sm: '90%'} }} >
+        <Button variant="outlined" color="secondary" sx={{mt: {xs: 0, sm: 1}, width: {xs: '49%', sm: '90%'} }} onClick={props.download} >
           Download
         </Button>
         </Box>

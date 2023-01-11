@@ -13,6 +13,8 @@ Globals:
     Tracing: Active
   Api:
     TracingEnabled: true
+    BinaryMediaTypes:
+    - "*/*"
 
 Resources:
   submitRequestFunction:
@@ -112,6 +114,28 @@ Resources:
         - AmazonDynamoDBFullAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: "arn:aws:secretsmanager:us-west-2:586103959850:secret:OpenAIKey-sXAkvm"
+
+  downloadNotesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: downloadNotes/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref slidenotesDynamoDB
+      Events:
+        downloadNotes:
+          Type: Api 
+          Properties:
+            Path: /downloadNotes
+            Method: POST
+            RestApiId:
+              Ref: slidenotesApi 
+      Policies:
+        - AmazonDynamoDBFullAccess
 
   slidenotesApi:
     Type: AWS::Serverless::Api
