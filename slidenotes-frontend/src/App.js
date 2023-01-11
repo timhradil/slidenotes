@@ -21,6 +21,17 @@ function App() {
   const [title, setTitle] = React.useState("")
   const [status, setStatus] = React.useState("")
   const [notes, setNotes] = React.useState("")
+  const [path, setPath] = React.useState(window.location.pathname)
+  
+  React.useEffect(() => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    const id = path.slice(1)
+    if (id.match(uuidRegex)) {
+      setStatus("Sending Request")
+      setProgress(25)
+      checkRequestStatus(id)
+    }
+  }, [path])
 
   function handlePPTXUpload(e){
     if (!e.target.files) {
@@ -46,7 +57,7 @@ function App() {
     fetch(url, requestOptions)
     .then((response) => response.json())
     .then((data) => {
-      checkRequestStatus(data["id"])
+      window.location = "/" + data["id"]
     })
     .catch((err) => {
       console.log(err.message)
@@ -64,6 +75,7 @@ function App() {
       fetch(url, requestOptions)
       .then((response) => response.json())
       .then((data) => {
+        setTitle(data["s3key"])
         setProgress(data["progress"])
         setStatus(data["status"])
         if (data["notes_text"].length > 0){

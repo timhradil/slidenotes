@@ -8,10 +8,10 @@ function Navbar(props) {
       <AppBar position='static'>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <Box sx={{ py: 1 }}>
-            <img src={logo} alt="Slidenotes" height="70px" /> 
+            <a href="/"><img src={logo} alt="Slidenotes" height="70px" /></a> 
           </Box>
           <Box>
-            <Button color="secondary">Home</Button>
+            <Button color="secondary" href="/">Home</Button>
             <Button color="secondary">Premium</Button>
           </Box>
         </Toolbar>

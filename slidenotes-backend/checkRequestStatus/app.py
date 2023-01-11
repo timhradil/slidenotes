@@ -21,42 +21,37 @@ def lambda_handler(event, context):
         'id': {'S': id}
       },
       AttributesToGet=[
+        's3key',
         'raw_text_hash',
         'notes_text',
       ]
     )
 
+    s3key = response['Item']['s3key']['S']
     raw_text_hash = response['Item']['raw_text_hash']['S']
     notes_text = response['Item']['notes_text']['S']
  
     if len(raw_text_hash) <= 1:
-      return {
-        'statusCode': 202,
-        'headers': {
-            'Access-Control-Allow-Headers': '*',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
-        },
-        'body': json.dumps({"status": "Extracting Text", "notes_text": "", "progress": 50})
-      }
-
-    if len(notes_text) <= 1:
-      return {
-        'statusCode': 202,
-        'headers': {
-            'Access-Control-Allow-Headers': '*',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
-        },
-        'body': json.dumps({"status": "Creating Notes", "notes_text": "", "progress": 75})
-      }
-
+      statusCode = 202
+      status = "Extracting Text"
+      progress = 50
+      notes_text = ""
+    elif len(notes_text) <= 1:
+      statusCode = 202
+      status = "Creating Notes"
+      progress = 75
+      notes_text = ""
+    else:
+      statusCode = 200
+      status = "Finished"
+      progress = 100
+      
     return {
-        'statusCode': 200,
+        'statusCode': statusCode,
         'headers': {
             'Access-Control-Allow-Headers': '*',
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
         },
-        'body': json.dumps({"status": "Finished", "notes_text": notes_text, "progress": 100})
+        'body': json.dumps({"s3key": s3key, "status": status, "notes_text": notes_text, "progress": progress})
     }

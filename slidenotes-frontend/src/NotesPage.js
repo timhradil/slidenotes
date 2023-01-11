@@ -1,5 +1,6 @@
 import React from 'react';
 import {Box, Typography, Grid, Button} from '@mui/material';
+import {RWebShare} from "react-web-share";
 
 function NotesPage(props) {
   return(
@@ -16,9 +17,18 @@ function NotesPage(props) {
       </Grid>
       <Grid item xs={12} sm={2} sx={{ display: 'flex', flexDirection: 'column', flexWrap: 'wrap'}}>
         <Box sx={{display: 'flex', flexWrap: 'wrap', justifyContent: {xs: 'space-between', sm: 'flex-start', md: 'flex-end'} }}>
-        <Button variant="outlined" color="secondary" sx={{width: {xs: '49%', sm: '90%'} }} >
-          Share 
-        </Button>
+        <RWebShare
+          data={{
+            text: "Check out my notes for "+props.title,
+            url: window.location.href,
+            title: "Share your notes on "+props.title,
+          }}
+          sites={['whatsapp','telegram','mail','copy']}
+        >
+          <Button variant="outlined" color="secondary" sx={{width: {xs: '49%', sm: '90%'} }} >
+            Share 
+          </Button>
+        </RWebShare>
         <Button variant="outlined" color="secondary" sx={{mt: {xs: 0, sm: 1}, width: {xs: '49%', sm: '90%'} }} >
           Download
         </Button>
