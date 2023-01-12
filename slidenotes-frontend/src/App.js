@@ -47,7 +47,7 @@ function App() {
   }
 
   function sendRequest(key){
-    setTitle(key)
+    setTitle(key.replace('.pptx', ''))
     setProgress(25)
     setStatus("Sending Request")
     const url = "https://jego7yc194.execute-api.us-west-2.amazonaws.com/Stage/submitRequest"
@@ -77,7 +77,7 @@ function App() {
       fetch(url, requestOptions)
       .then((response) => response.json())
       .then((data) => {
-        setTitle(data["s3key"])
+        setTitle(data["s3key"].replace('.pptx',''))
         setProgress(data["progress"])
         setStatus(data["status"])
         if (data["notes_text"].length > 0){
@@ -101,6 +101,30 @@ function App() {
         body: JSON.stringify({ id: id })
     }
     fetch(url, requestOptions)
+    .then((response) => response.text())
+    .then((data) => {
+      var byteString = atob(data);
+
+      var ab = new ArrayBuffer(byteString.length);
+      var ia = new Uint8Array(ab);
+      for (var i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+
+      var blob = new Blob([ia], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(
+        blob,
+      );
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute(
+        'download',
+        title + '.pdf',
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    })
     .catch((err) => {
       console.log(err.message)
     })

@@ -13,8 +13,10 @@ Globals:
     Tracing: Active
   Api:
     TracingEnabled: true
-    BinaryMediaTypes:
-    - "*/*"
+    Cors:
+      AllowMethods: "'GET,POST,OPTIONS'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
 
 Resources:
   submitRequestFunction:
@@ -141,10 +143,6 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: prod
-      Cors:
-        AllowMethods: "'GET,POST,OPTIONS'"
-        AllowHeaders: "'*'"
-        AllowOrigin: "'*'"
 
   pptxBucket:
     Type: AWS::S3::Bucket
