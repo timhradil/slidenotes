@@ -1,6 +1,6 @@
 import React from 'react';
 import {Box, Button, Toolbar, AppBar} from '@mui/material';
-import logo from './logo.png'
+import logo from '../static/logo.png'
 
 function Navbar(props) {
   return(
@@ -12,7 +12,6 @@ function Navbar(props) {
           </Box>
           <Box>
             <Button color="secondary" href="/">Home</Button>
-            <Button color="secondary">Premium</Button>
           </Box>
         </Toolbar>
       </AppBar>

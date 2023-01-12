@@ -1,8 +1,8 @@
 import React from 'react';
 import {Typography, Box, Grid, Button} from '@mui/material';
-import fast from './fast.png'
-import comprehensive from './comprehensive.png'
-import easy from './easy.png'
+import fast from '../static/fast.png'
+import comprehensive from '../static/comprehensive.png'
+import easy from '../static/easy.png'
 
 function HomePage(props) {
   
