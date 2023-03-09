@@ -21,6 +21,10 @@ function App() {
   const [alertText, setAlertText] = React.useState("");
 
   React.useEffect(() => {
+    document.title = 'SlideNotes' 
+  }, [])
+
+  React.useEffect(() => {
     const foundPhone = localStorage.getItem("phone");
     if (foundPhone) {
       setLoggedIn(true);
