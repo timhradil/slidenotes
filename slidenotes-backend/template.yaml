@@ -133,6 +133,8 @@ Resources:
               Ref: slidenotesApi
       Policies:
         - AmazonDynamoDBFullAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: "arn:aws:secretsmanager:us-west-2:586103959850:secret:StripeTestKeys-Ct4u4T"
 
   createStripeCheckoutSessionFunction:
     Type: AWS::Serverless::Function
@@ -155,6 +157,8 @@ Resources:
               Ref: slidenotesApi
       Policies:
         - AmazonDynamoDBFullAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: "arn:aws:secretsmanager:us-west-2:586103959850:secret:StripeTestKeys-Ct4u4T"
 
   createStripePortalSessionFunction:
     Type: AWS::Serverless::Function
@@ -177,6 +181,8 @@ Resources:
               Ref: slidenotesApi
       Policies:
         - AmazonDynamoDBFullAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: "arn:aws:secretsmanager:us-west-2:586103959850:secret:StripeTestKeys-Ct4u4T"
 
   convertPPTXToTextFunction:
     Type: AWS::Serverless::Function
@@ -325,6 +331,8 @@ Resources:
         - AmazonDynamoDBFullAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: "arn:aws:secretsmanager:us-west-2:586103959850:secret:TwilioKeys-A75GIG"
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: "arn:aws:secretsmanager:us-west-2:586103959850:secret:StripeTestKeys-Ct4u4T"
   
   slidenotesApi:
     Type: AWS::Serverless::Api

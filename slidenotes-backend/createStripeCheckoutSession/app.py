@@ -4,9 +4,8 @@ import boto3
 import hashlib
 import stripe
 
-def getStripeKey():
-    """
-    secret_name = "TwilioKeys"
+def getStripeKeys():
+    secret_name = "StripeTestKeys"
     region_name = "us-west-2"
     session = boto3.session.Session()
     client = session.client(
@@ -17,9 +16,8 @@ def getStripeKey():
     get_secret_value_response = client.get_secret_value(
       SecretId=secret_name
     )
-    """
 
-    return 'sk_test_51McXo9Lmvir5itla4cO3ZLwA2wR167MbfVNLsUNJ4wRblVjJeKb2CJfpOEC2HUuVChlC6hYFTXhEmu3h5zxf3YkM00oXFD6Q1E'
+    return json.loads(get_secret_value_response['SecretString'])
 
 # checkPhoneCode
 def lambda_handler(event, context):
@@ -31,7 +29,7 @@ def lambda_handler(event, context):
       db_client = boto3.client('dynamodb')
       DYNAMODB_TABLE = os.environ['DYNAMODB_TABLE']
 
-      stripe.api_key = getStripeKey()
+      stripe.api_key = getStripeKeys()['api_key']
 
       body = json.loads(event['body'])
       return_url = body['returnUrl']
