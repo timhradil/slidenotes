@@ -13,10 +13,10 @@ function App() {
   const [id, setId] = React.useState("");
   const [file, setFile] = React.useState();
   const [loginModalOpen, setLoginModalOpen] = React.useState(false);
-  //const [phone, setPhone] = React.useState("");
-  const [phone, setPhone] = React.useState("+16305018956");
-  //const [loggedIn, setLoggedIn] = React.useState(false);
-  const [loggedIn, setLoggedIn] = React.useState(true);
+  const [phone, setPhone] = React.useState("");
+  //const [phone, setPhone] = React.useState("+16305018956");
+  const [loggedIn, setLoggedIn] = React.useState(false);
+  //const [loggedIn, setLoggedIn] = React.useState(true);
   const [alert, setAlert] = React.useState("");
   const [alertText, setAlertText] = React.useState("");
 
