@@ -1,106 +1,129 @@
-import React from 'react';
-import { uploadFile } from 'react-s3';
-import { Box } from '@mui/material';
-import Protect from 'react-app-protect'
-import 'react-app-protect/dist/index.css'
-import NotesPage from './components/NotesPage.js';
-import ProgressPage from './components/ProgressPage.js';
-import HomePage from './components/HomePage.js';
-import Navbar from './components/Navbar.js';
-import downloadNotes from './helpers/downloadNotes.js';
-import s3Config from './config/s3Config.js';
-import './App.css';
+import React from "react";
+import { Box, Snackbar, Alert } from "@mui/material";
+import NotesPage from "./components/NotesPage.js";
+import ProgressPage from "./components/ProgressPage.js";
+import HomePage from "./components/HomePage.js";
+import Navbar from "./components/Navbar.js";
+import LoginModal from "./components/LoginModal.js";
+import "./App.css";
 
 function App() {
-  const [progress, setProgress] = React.useState(0)
-  const [title, setTitle] = React.useState("")
-  const [status, setStatus] = React.useState("")
-  const [notes, setNotes] = React.useState("")
+  const [page, setPage] = React.useState("");
   // eslint-disable-next-line
-  const [path, setPath] = React.useState(window.location.pathname)
-  const [id, setId] = React.useState("")
-  
+  const [id, setId] = React.useState("");
+  const [file, setFile] = React.useState();
+  const [loginModalOpen, setLoginModalOpen] = React.useState(false);
+  //const [phone, setPhone] = React.useState("");
+  const [phone, setPhone] = React.useState("+16305018956");
+  //const [loggedIn, setLoggedIn] = React.useState(false);
+  const [loggedIn, setLoggedIn] = React.useState(true);
+  const [alert, setAlert] = React.useState("");
+  const [alertText, setAlertText] = React.useState("");
+
   React.useEffect(() => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-    const possibleId = path.slice(1)
-    if (possibleId.match(uuidRegex)) {
-      setStatus("Sending Request")
-      setProgress(25)
-      setId(possibleId)
-      checkRequestStatus(possibleId)
+    const foundPhone = localStorage.getItem("phone");
+    if (foundPhone) {
+      setLoggedIn(true);
+      setPhone(foundPhone);
     }
-  }, [path])
+  }, []);
 
-  function handlePPTXUpload(e){
-    if (!e.target.files) {
-      return
-    }
-    const file = e.target.files[0]
-    setStatus("Uploading")
-    uploadFile(file, s3Config)
-      .then(data => sendRequest(data["key"]))
-      .catch(err => console.error(err))
-  }
-
-  function sendRequest(key){
-    setTitle(key.replace('.pptx', ''))
-    setProgress(25)
-    setStatus("Sending Request")
-    const url = "https://jego7yc194.execute-api.us-west-2.amazonaws.com/Stage/submitRequest"
-    const requestOptions = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ s3key: key })
-    }
-    fetch(url, requestOptions)
-    .then((response) => response.json())
-    .then((data) => {
-      window.location = "/" + data["id"]
-    })
-    .catch((err) => {
-      console.log(err.message)
-    })
-  }
-
-  function checkRequestStatus(id){
-    const interval = setInterval(() => {
-      const url = "https://jego7yc194.execute-api.us-west-2.amazonaws.com/Stage/checkRequestStatus"
-      const requestOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id })
+  React.useEffect(() => {
+    const path = window.location.pathname;
+    if (path.length > 1) {
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const possibleId = path.slice(1);
+      if (possibleId.match(uuidRegex)) {
+        setId(possibleId);
+        setPage("notes");
       }
-      fetch(url, requestOptions)
-      .then((response) => response.json())
-      .then((data) => {
-        setTitle(data["s3key"].replace('.pptx',''))
-        setProgress(data["progress"])
-        setStatus(data["status"])
-        if (data["notes_text"].length > 0){
-          clearInterval(interval)
-          setTimeout(() => {
-            setNotes(data["notes_text"].trimStart())
-          }, 1000)
-        }
-      })
-      .catch((err) => {
-        console.log(err.message)
-      })
-    }, 1000)
+    } else {
+      setPage("home");
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (alert === "error") {
+      setId("");
+      setPage("home");
+    }
+  }, [alert]);
+
+  function handleUpload(file) {
+    setFile(file);
+    setPage("progress");
   }
-  
+
+  function login() {
+    setLoggedIn(true);
+    localStorage.setItem("phone", phone);
+  }
+
+  function logout() {
+    setLoggedIn(false);
+    setPhone("");
+    localStorage.clear();
+  }
+
+  function createAlert(type, message) {
+    setAlert(type);
+    setAlertText(message);
+  }
+
   return (
-    <Protect sha512={process.env.REACT_APP_SHA512_PASSWORD_HASH}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '100vh' }}>
-        <Navbar />
-        {status.length === 0 &&
-          <HomePage handleUpload={handlePPTXUpload} />}
-        {status.length > 0 && notes.length === 0 &&
-          <ProgressPage status={status} progress={progress} />}
-        {notes.length > 0 &&
-          <NotesPage title={title} notes={notes} download={() => downloadNotes(id, title)} />}
-      </Box>
-    </Protect>
+    <Box
+      sx={{
+        height: "100%",
+        minHeight: "100vh",
+      }}
+    >
+      <Snackbar
+        open={alert.length > 0}
+        autoHideDuration={5000}
+        onClose={() => setAlert("")}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setAlert("")}
+          severity={alert.length > 0 ? alert : "error"}
+          sx={{ width: "100%" }}
+        >
+          {alertText}
+        </Alert>
+      </Snackbar>
+      <LoginModal
+        open={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        phone={phone}
+        onPhoneChange={setPhone}
+        onLogin={login}
+      />
+      <Navbar
+        loggedIn={loggedIn}
+        login={() => setLoginModalOpen(true)}
+        logout={logout}
+      />
+      {page === "home" && (
+        <HomePage
+          loggedIn={loggedIn}
+          phone={phone}
+          handleUpload={handleUpload}
+          login={() => setLoginModalOpen(true)}
+          createAlert={createAlert}
+        />
+      )}
+      {page === "progress" && (
+        <ProgressPage
+          phone={phone}
+          file={file}
+          onFinished={() => {window.location = "/" + id}}
+          createAlert={createAlert}
+          onRequestSent={(id) => setId(id)}
+        />
+      )}
+      {page === "notes" && <NotesPage id={id} />}
+    </Box>
   );
 }
 

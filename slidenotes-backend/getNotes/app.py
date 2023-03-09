@@ -1,8 +1,9 @@
 import os
 import json
 import boto3
+from dynamodb_json import json_util as json_db
 
-# checkRequestStatus
+# getUserNotes
 def lambda_handler(event, context):
     print('received event:')
     print(event)
@@ -10,44 +11,31 @@ def lambda_handler(event, context):
     # Static Variables
     body = {}
     statusCode = 500
-    currentStatus = "Error"
 
     try:
       db_client = boto3.client('dynamodb')
       DYNAMODB_TABLE = os.environ['DYNAMODB_TABLE']
 
-      body = json.loads(event['body'])
-      id = body['id']
+      request_body = json.loads(event['body'])
+      id = request_body['id']
 
-      # Check DynamoDB Entry
       response = db_client.get_item(
         TableName=DYNAMODB_TABLE,
         Key={
-          'id': {'S': id}
+          'id':{'S': id},
         },
         AttributesToGet=[
-          'currentStatus',
-        ]
+          'notes_text',
+          's3key'
+        ],
       )
 
-      if 'Item' in response:
-        currentStatus = response['Item']['currentStatus']['S']
-        if 'Failed' in currentStatus:
-          response = db_client.delete_item(
-            TableName=DYNAMODB_TABLE,
-            Key={
-              'id':{'S': id}
-            }
-          )
-        else:
-          statusCode = 202
-          if currentStatus == 'Finished':
-            statusCode = 200
+      body = json_db.loads(response['Item'])
+
+      statusCode = 200
 
     except BaseException as error:
       print("An error ocurred: {} ".format(error))
-
-    body['status'] = currentStatus
       
     return {
         'statusCode': statusCode,

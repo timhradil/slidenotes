@@ -2,14 +2,12 @@ import os
 import io
 import json
 import boto3
-import collections
-import collections.abc
-from pptx import Presentation
+from PyPDF2 import PdfReader
 import nltk
 from nltk.corpus import stopwords
 import hashlib
 
-# convertPPTXToText 
+# convertPDFToText 
 def lambda_handler(event, context):
     print('received event:')
     print(event)
@@ -45,16 +43,11 @@ def lambda_handler(event, context):
       response = s3_client.get_object(Bucket=S3_BUCKET, Key=s3key)
       prs_bytes = response['Body'].read()
       prs_file = io.BytesIO(prs_bytes)
-      prs = Presentation(prs_file)
+      prs = PdfReader(prs_file)
       text_runs = []
 
-      for slide in prs.slides:
-        for shape in slide.shapes:
-            if not shape.has_text_frame:
-                continue
-            for paragraph in shape.text_frame.paragraphs:
-                for run in paragraph.runs:
-                    text_runs.append(run.text)
+      for slide in prs.pages:
+        text_runs.append(slide.extract_text())
 
       raw_text = ' '.join(text_runs)
     

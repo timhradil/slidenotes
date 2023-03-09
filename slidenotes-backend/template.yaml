@@ -12,7 +12,7 @@ Globals:
     MemorySize: 128
     Tracing: Active
   Api:
-    TracingEnabled: true
+    TracingEnabled: false
     Cors:
       AllowMethods: "'GET,POST,OPTIONS'"
       AllowHeaders: "'*'"
@@ -29,8 +29,10 @@ Resources:
       - arm64
       Environment:
         Variables:
-          SQS_QUEUE: !Ref pptxToTextQueue
+          PPTX_SQS_QUEUE: !Ref pptxToTextQueue
+          PDF_SQS_QUEUE: !Ref pdfToTextQueue
           DYNAMODB_TABLE: !Ref slidenotesDynamoDB
+          DYNAMODB_TABLE_USERS: !Ref usersDynamoDB
       Events:
         submitRequest:
           Type: Api 
@@ -43,7 +45,6 @@ Resources:
         - AmazonSQSFullAccess
         - AmazonDynamoDBFullAccess
        
-
   checkRequestStatusFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -60,6 +61,117 @@ Resources:
           Type: Api 
           Properties:
             Path: /checkRequestStatus
+            Method: POST
+            RestApiId:
+              Ref: slidenotesApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+  getUserNotesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: getUserNotes/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref slidenotesDynamoDB
+          DYNAMODB_TABLE_USERS: !Ref usersDynamoDB
+      Events:
+        checkRequestStatus:
+          Type: Api 
+          Properties:
+            Path: /getUserNotes
+            Method: POST
+            RestApiId:
+              Ref: slidenotesApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+  getNotesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: getNotes/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref slidenotesDynamoDB
+      Events:
+        checkRequestStatus:
+          Type: Api 
+          Properties:
+            Path: /getNotes
+            Method: POST
+            RestApiId:
+              Ref: slidenotesApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+  stripeWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: stripeWebhook/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref usersDynamoDB
+      Events:
+        createStripeCheckoutSession:
+          Type: Api 
+          Properties:
+            Path: /stripeWebhook
+            Method: POST
+            RestApiId:
+              Ref: slidenotesApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+  createStripeCheckoutSessionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: createStripeCheckoutSession/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref usersDynamoDB
+      Events:
+        createStripeCheckoutSession:
+          Type: Api 
+          Properties:
+            Path: /createStripeCheckoutSession
+            Method: POST
+            RestApiId:
+              Ref: slidenotesApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+  createStripePortalSessionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: createStripePortalSession/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref usersDynamoDB
+      Events:
+        createStripePortalSession:
+          Type: Api 
+          Properties:
+            Path: /createStripePortalSession
             Method: POST
             RestApiId:
               Ref: slidenotesApi
@@ -92,6 +204,31 @@ Resources:
         - AmazonDynamoDBFullAccess
         - AmazonSQSFullAccess
 
+  convertPDFToTextFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 300
+      MemorySize: 1024
+      CodeUri: convertPDFToText/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          S3_BUCKET: !Ref pptxBucket
+          DYNAMODB_TABLE: !Ref slidenotesDynamoDB
+          SQS_QUEUE: !Ref summarizeTextQueue 
+      Events:
+        convertPPTXToTextQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt pdfToTextQueue.Arn
+            BatchSize: 1
+      Policies:
+        - AmazonS3FullAccess
+        - AmazonDynamoDBFullAccess
+        - AmazonSQSFullAccess
 
   summarizeTextFunction:
     Type: AWS::Serverless::Function
@@ -102,10 +239,11 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.8
       Architectures:
-      - arm64
+      - x86_64 
       Environment:
         Variables:
           DYNAMODB_TABLE: !Ref slidenotesDynamoDB
+          S3_BUCKET: !Ref pptxBucket
       Events:
         summarizeTextQueueEvent:
           Type: SQS
@@ -113,6 +251,7 @@ Resources:
             Queue: !GetAtt summarizeTextQueue.Arn
             BatchSize: 1
       Policies:
+        - AmazonS3FullAccess
         - AmazonDynamoDBFullAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: "arn:aws:secretsmanager:us-west-2:586103959850:secret:OpenAIKey-sXAkvm"
@@ -138,7 +277,55 @@ Resources:
               Ref: slidenotesApi 
       Policies:
         - AmazonDynamoDBFullAccess
-
+  
+  sendPhoneCodeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: sendPhoneCode/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref usersDynamoDB
+      Events:
+        sendPhoneCode:
+          Type: Api 
+          Properties:
+            Path: /sendPhoneCode
+            Method: POST
+            RestApiId:
+              Ref: slidenotesApi 
+      Policies:
+        - AmazonDynamoDBFullAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: "arn:aws:secretsmanager:us-west-2:586103959850:secret:TwilioKeys-A75GIG"
+  
+  checkPhoneCodeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: checkPhoneCode/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+      - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref usersDynamoDB
+      Events:
+        checkPhoneCode:
+          Type: Api 
+          Properties:
+            Path: /checkPhoneCode
+            Method: POST
+            RestApiId:
+              Ref: slidenotesApi 
+      Policies:
+        - AmazonDynamoDBFullAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: "arn:aws:secretsmanager:us-west-2:586103959850:secret:TwilioKeys-A75GIG"
+  
   slidenotesApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -148,6 +335,11 @@ Resources:
     Type: AWS::S3::Bucket
 
   pptxToTextQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 300
+
+  pdfToTextQueue:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 300
@@ -165,6 +357,10 @@ Resources:
           AttributeType: S
         - AttributeName: raw_text_hash
           AttributeType: S
+        - AttributeName: timeCreated
+          AttributeType: N
+        - AttributeName: phoneNumberHash
+          AttributeType: S
       KeySchema: 
         - AttributeName: id
           KeyType: HASH
@@ -175,38 +371,59 @@ Resources:
             KeyType: HASH
           Projection:
             NonKeyAttributes:
-            - raw_text
-            - id
             - notes_text
-            - s3key
+            - premium
+            - currentStatus
             ProjectionType: INCLUDE
           ProvisionedThroughput:
             ReadCapacityUnits: 5
             WriteCapacityUnits: 5
-      ProvisionedThroughput: 
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
+        - IndexName: phoneNumberHashIndex
+          KeySchema:
+          - AttributeName: phoneNumberHash
+            KeyType: HASH
+          - AttributeName: timeCreated 
+            KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+            - id
+            - s3key
+            - premium
+            - currentStatus
+            ProjectionType: INCLUDE
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
 
-  ApplicationResourceGroup:
-    Type: AWS::ResourceGroups::Group
+  usersDynamoDB:
+    Type: AWS::DynamoDB::Table
     Properties:
-      Name:
-        Fn::Join:
-        - ''
-        - - ApplicationInsights-SAM-
-          - Ref: AWS::StackName
-      ResourceQuery:
-        Type: CLOUDFORMATION_STACK_1_0
-  ApplicationInsightsMonitoring:
-    Type: AWS::ApplicationInsights::Application
-    Properties:
-      ResourceGroupName:
-        Fn::Join:
-        - ''
-        - - ApplicationInsights-SAM-
-          - Ref: AWS::StackName
-      AutoConfigurationEnabled: 'true'
-    DependsOn: ApplicationResourceGroup
+      AttributeDefinitions:
+        - AttributeName: phoneNumberHash
+          AttributeType: S
+        - AttributeName: stripeId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: phoneNumberHash
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: stripeIdIndex
+          KeySchema:
+          - AttributeName: stripeId
+            KeyType: HASH
+          Projection:
+            NonKeyAttributes:
+            - premiumPaidTime 
+            ProjectionType: INCLUDE
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
 
 Outputs:
   slidenotesApi:
